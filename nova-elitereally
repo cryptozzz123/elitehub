@@ -2,14 +2,15 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "Nova Elite | +1 Strength",
-   LoadingTitle = "Finalizing Systems...",
-   LoadingSubtitle = "by zero0",
-   ConfigurationSaving = {Enabled = true, FolderName = "NovaStrength", FileName = "StrengthConfig"},
+   LoadingTitle = "Nova Elite Systems Online",
+   LoadingSubtitle = "by Karthish",
+   ConfigurationSaving = {Enabled = true, FolderName = "NovaElite", FileName = "Config"},
    KeySystem = false
 })
 
 --// States
 _G.AutoWin = false
+_G.AutoBrawl = false
 _G.AutoStrength = false
 _G.AutoStrengthPad = false
 _G.AutoWeight = false
@@ -19,27 +20,94 @@ _G.Godmode = false
 local MainTab = Window:CreateTab("Main", nil)
 local FarmSection = MainTab:CreateSection("Farming")
 
--- FIXED: Auto Win (Remote Invoke) set to 0.6s
+-- NEW: Auto Join Brawl
 MainTab:CreateToggle({
-   Name = "Auto Win (Remote Invoke)",
+   Name = "Auto Join Brawl",
    CurrentValue = false,
-   Flag = "AutoWinToggle",
+   Flag = "BrawlToggle",
    Callback = function(Value)
-      _G.AutoWin = Value
+      _G.AutoBrawl = Value
       if Value then
          task.spawn(function()
-            local remote = game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Network"):WaitForChild("ClientToServer"):WaitForChild("RemoteFunctions"):WaitForChild("ClaimWinButton")
-            while _G.AutoWin do
-               local args = { 3 }
-               remote:InvokeServer(unpack(args))
-               task.wait(0.6) -- Updated to 0.6s as requested
+            while _G.AutoBrawl do
+               local remote = game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Network"):WaitForChild("ClientToServer"):WaitForChild("RemoteEvents"):WaitForChild("JoinBrawl")
+               if remote then remote:FireServer() end
+               task.wait(0.5) -- 0.5s Interval as requested
             end
          end)
       end
    end,
 })
 
--- RESTORED: Auto Weight (Shotgun Mode)
+-- Auto Win (Remote 0.6s)
+MainTab:CreateToggle({
+   Name = "Auto Win (Remote 0.6s)",
+   CurrentValue = false,
+   Flag = "WinToggle",
+   Callback = function(Value)
+      _G.AutoWin = Value
+      if Value then
+         task.spawn(function()
+            local remote = game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Network"):WaitForChild("ClientToServer"):WaitForChild("RemoteFunctions"):WaitForChild("ClaimWinButton")
+            while _G.AutoWin do
+               remote:InvokeServer(unpack({3}))
+               task.wait(0.6)
+            end
+         end)
+      end
+   end,
+})
+
+-- Auto Strength Pad (Cycle All)
+MainTab:CreateToggle({
+   Name = "Auto Strength Pad (Cycle All)",
+   CurrentValue = false,
+   Flag = "PadToggle",
+   Callback = function(Value)
+      _G.AutoStrengthPad = Value
+      if Value then
+         task.spawn(function()
+            while _G.AutoStrengthPad do
+               local pads = workspace.Obby:FindFirstChild("StrengthButtons")
+               if pads then
+                  for _, pad in pairs(pads:GetChildren()) do
+                     if not _G.AutoStrengthPad then break end
+                     local btn = pad:FindFirstChild("Button")
+                     if btn and game.Players.LocalPlayer.Character then
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = btn.CFrame * CFrame.new(0, 3, 0)
+                        task.wait(0.2)
+                     end
+                  end
+               end
+               task.wait(0.1)
+            end
+         end)
+      end
+   end,
+})
+
+local AutomationSection = MainTab:CreateSection("Automation")
+
+-- Auto Strength (Remote)
+MainTab:CreateToggle({
+   Name = "Auto Strength (Remote Lift)",
+   CurrentValue = false,
+   Flag = "LiftToggle",
+   Callback = function(Value)
+      _G.AutoStrength = Value
+      if Value then
+         task.spawn(function()
+            local remote = game:GetService("ReplicatedStorage").Packages.Network.ClientToServer.RemoteEvents:WaitForChild("LiftWeight")
+            while _G.AutoStrength do
+               remote:FireServer()
+               task.wait(0.1)
+            end
+         end)
+      end
+   end,
+})
+
+-- Auto Buy Weights
 MainTab:CreateToggle({
    Name = "Auto Buy Weights",
    CurrentValue = false,
@@ -49,8 +117,7 @@ MainTab:CreateToggle({
       if Value then
          task.spawn(function()
             while _G.AutoWeight do
-               local obby = workspace:FindFirstChild("Obby")
-               local weights = obby and obby:FindFirstChild("Weights")
+               local weights = workspace.Obby:FindFirstChild("Weights")
                if weights then
                   for _, weight in pairs(weights:GetChildren()) do
                      if not _G.AutoWeight then break end
@@ -70,57 +137,6 @@ MainTab:CreateToggle({
    end,
 })
 
--- Auto Strength Pad (Cycles all pads)
-MainTab:CreateToggle({
-   Name = "Auto Strength Pad (Cycle All)",
-   CurrentValue = false,
-   Flag = "PadToggle",
-   Callback = function(Value)
-      _G.AutoStrengthPad = Value
-      if Value then
-         task.spawn(function()
-            while _G.AutoStrengthPad do
-               local obbyFolder = workspace:FindFirstChild("Obby")
-               local pads = obbyFolder and obbyFolder:FindFirstChild("StrengthButtons")
-               if pads then
-                  for _, pad in pairs(pads:GetChildren()) do
-                     if not _G.AutoStrengthPad then break end
-                     local btn = pad:FindFirstChild("Button")
-                     if btn and game.Players.LocalPlayer.Character then
-                        local hrp = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if hrp then
-                           hrp.CFrame = btn.CFrame * CFrame.new(0, 3, 0)
-                           task.wait(0.2)
-                        end
-                     end
-                  end
-               end
-               task.wait(0.1)
-            end
-         end)
-      end
-   end,
-})
-
--- Auto Strength (Remote Lift)
-MainTab:CreateToggle({
-   Name = "Auto Strength (Remote)",
-   CurrentValue = false,
-   Flag = "StrengthToggle",
-   Callback = function(Value)
-      _G.AutoStrength = Value
-      if Value then
-         task.spawn(function()
-            while _G.AutoStrength do
-               local remote = game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Network"):WaitForChild("ClientToServer"):WaitForChild("RemoteEvents"):WaitForChild("LiftWeight")
-               if remote then remote:FireServer() end
-               task.wait(0.1)
-            end
-         end)
-      end
-   end,
-})
-
 -- Auto Rebirth
 MainTab:CreateToggle({
    Name = "Auto Rebirth",
@@ -131,8 +147,8 @@ MainTab:CreateToggle({
       if Value then
          task.spawn(function()
             while _G.AutoRebirth do
-               local remote = game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Network"):WaitForChild("ClientToServer"):WaitForChild("RemoteEvents"):WaitForChild("Rebirth")
-               if remote then remote:FireServer() end
+               local remote = game:GetService("ReplicatedStorage").Packages.Network.ClientToServer.RemoteEvents:WaitForChild("Rebirth")
+               remote:FireServer()
                task.wait(0.5)
             end
          end)
@@ -140,9 +156,9 @@ MainTab:CreateToggle({
    end,
 })
 
-local WorldSection = MainTab:CreateSection("Teleports")
+local WorldTab = Window:CreateTab("World", nil)
 
-MainTab:CreateButton({
+WorldTab:CreateButton({
    Name = "TP to Lobby",
    Callback = function()
       local target = workspace.Obby.Leaderboards.StrengthLeaderboard.LeaderboardPart
@@ -150,7 +166,7 @@ MainTab:CreateButton({
    end,
 })
 
-MainTab:CreateButton({
+WorldTab:CreateButton({
    Name = "Tp to Finish",
    Callback = function()
       local target = workspace:FindFirstChild("King chair", true)
@@ -160,10 +176,9 @@ MainTab:CreateButton({
    end,
 })
 
-local SafetySection = MainTab:CreateSection("Safety")
+local SafetyTab = Window:CreateTab("Safety", nil)
 
--- Godmode with Infinite ForceField
-MainTab:CreateToggle({
+SafetyTab:CreateToggle({
    Name = "Godmode (Infinite ForceField)",
    CurrentValue = false,
    Callback = function(Value)
@@ -176,6 +191,7 @@ MainTab:CreateToggle({
             end
             task.wait(0.5)
          end
+         -- Clean up FF
          local char = game.Players.LocalPlayer.Character
          if char and char:FindFirstChildOfClass("ForceField") then
             char:FindFirstChildOfClass("ForceField"):Destroy()
