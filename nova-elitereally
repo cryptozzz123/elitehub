@@ -3,7 +3,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
    Name = "Nova Elite | +1 Strength",
    LoadingTitle = "Nova Elite Systems Online",
-   LoadingSubtitle = "by Karthish",
+   LoadingSubtitle = "by crash",
    ConfigurationSaving = {Enabled = true, FolderName = "NovaElite", FileName = "Config"},
    KeySystem = false
 })
